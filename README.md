@@ -18,6 +18,7 @@ Finding sources similar to TII to get multiple EU countries perspectives.
 Reading in the other table from TII website describing possible glitches / outliers in data such as storms/ traffic counter being out of action.
 Changing the random time when scraping the traffic data - this was used to make sure selenium had the page load in properly. There must be a function in selenium that waits the correct amount of time
 
+There were small problems when trying to run the code on a work laptop - this could be due to vpn issues or problems with TII website. It has ran fine on own pc. 
 
 
 
