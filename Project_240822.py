@@ -314,16 +314,7 @@ test_data_22.columns= ["Pump price 2022","week","traffic count 2022"]
 graph_data = pd.merge(test_data,test_data_22,on="week",how="outer")
 #graph_data = graph_data.fillna(0)
 
-# Define a function called plot_timeseries
-def plot_timeseries(axes, x, y, color, xlabel, ylabel):
-  # Plot the inputs x,y in the provided color
-  axes.plot(x, y, color=color)
-  # Set the x-axis label
-  axes.set_xlabel(xlabel)
-  # Set the y-axis label
-  axes.set_ylabel(ylabel, color=color)
-  # Set the colors tick params for y-axis
-  axes.tick_params('y', colors=color)
+
 
 #May be more efficient way of doing this!
 #Changing x axis on plot to show month names instead of week numbers, went thruogh dataFrame to figure
@@ -334,57 +325,78 @@ month_starts = [1,6,10,14,19,23,27,32,36,40,45,49]
 month_names = ['Jan','Feb','Mar','Apr','May','Jun',
                'Jul','Aug','Sep','Oct','Nov','Dec'] 
 
+week_names = []
+week_starts = []
+for i in np.arange(start = 1,stop = 52,step = 2):
+    week_starts.append(i)
+    week_names.append("week "+str(i))
 
 
 
 
-#Code to create plot number 1
+#Chart 1 - traffic count with storm emma fixed
+#shows seasonal effects on traffic
+#GDSE = Graph data where we remove storm emma data and interpolate
+gdse = graph_data.copy()
 
-fig, ax = plt.subplots(2,1,sharey=True)
-# Plot the CO2 levels time-series in blue
-plot_timeseries(ax[0], graph_data['week'], graph_data['Pump price 2018']/1000, 'blue', "Months", "Pump price € / L")
-#Code gotten online to create second y axis on each plot as twinx wouldnt work otherwise.
-ax2 = np.array([a.twinx() for a in ax.ravel()]).reshape(ax.shape)
-plot_timeseries(ax2[0], graph_data['week'], graph_data['traffic count 2018']/1000, 'red', "Months", "Traffic count (1,000s)")
+gdse['traffic count 2018'].loc[8] = (gdse['traffic count 2018'].loc[7]+gdse['traffic count 2018'].loc[9])/2
 
-
-# Plot the 2022 data 
-plot_timeseries(ax[1], graph_data['week'], graph_data['Pump price 2022']/1000, 'blue', "Months", "Pump price € / L")
-plot_timeseries(ax2[1], graph_data['week'], graph_data['traffic count 2022']/1000, 'red', "Months", "Traffic count (1,000s)")
-
-ax[0].set_ylim([1,2.3])
-ax[1].set_ylim([1,2.3])
-
-ax2[0].set_ylim([0,200])
-ax2[1].set_ylim([0,200])
-
-ax[0].set_xticks(month_starts)
-ax[1].set_xticks(month_starts)
-
-ax[0].set_xticklabels(month_names)
-ax[1].set_xticklabels(month_names)
-
-
-ax2[0].set_xticks(month_starts)
-ax2[1].set_xticks(month_starts)
-
-ax2[0].set_xticklabels(month_names)
-ax2[1].set_xticklabels(month_names)
-
-
-
-plt.show()
-
-
-
-#Plotting 2018 and 2022 traffic count on graph 2.
-fig ,ax3 = plt.subplots()
-ax3.plot(graph_data['week'],graph_data['traffic count 2018'])
+#plot traffic count without storm emma drop
+fig ,ax3 = plt.subplots(figsize=(15.7,6),dpi=500)
+ax3.plot(gdse['week'],gdse['traffic count 2018']/1000,label = "2018 Traffic Count")
 ax3.set_xlabel('Week number')
-ax3.plot(graph_data['week'],graph_data['traffic count 2022'])
-ax3.set_xticks(month_starts)
-ax3.set_xticklabels(month_names)
+ax3.plot(gdse['week'],gdse['traffic count 2022']/1000,label = "2022 Traffic Count")
+ax3.set_xticks(week_starts)
+ax3.set_xticklabels(week_names,rotation = 60)
+ax3.set_ylabel('Traffic Count (1,000s)')
+fig.suptitle("Traffic Count with Storm Emma removed")
+fig.legend(bbox_to_anchor=[0.7, 0.55],loc='center')
+plt.savefig('C:/Users/steven.travers/Desktop/UCD Data Course/Graph1.png')
 plt.show()
+
+
+
+#chart 2 - Column chart for Traffic count and lines for fuel price
+width=0.35
+
+fig, ax = plt.subplots(figsize=(15.7,6),dpi=800)
+ax.bar(graph_data['week'], graph_data['Pump price 2018']/1000,width, color='#2167AE',label = "2018 Petrol Price")
+#Code gotten online to create second y axis on each plot as twinx wouldnt work otherwise.
+ax2 = ax.twinx()
+ax2.plot(graph_data['week'], graph_data['traffic count 2018']/1000, color='#E18EbA',label = "2018 traffic")
+
+ax.bar(graph_data['week']+width, graph_data['Pump price 2022']/1000, width,color='#91BFE3',label = "2022 Petrol Price")
+ax2.plot(graph_data['week'], graph_data['traffic count 2022']/1000, color='#A6E9AB',label = "2022 traffic")
+
+
+ax.set_xticks(week_starts)
+ax.set_xticklabels(week_names,rotation = 60)
+fig.suptitle(' Traffic Count & Fuel Price Data')
+#ax.legend()
+#ax2.legend()
+fig.legend(bbox_to_anchor=[0.7, 0.55],loc='center')
+ax.set_ylim([1,2.3])
+
+ax2.set_ylim([50,160])
+ax.set_ylabel('Petrol Pump Price / L (incl. Taxes)')
+ax2.set_ylabel('Traffic Count (1,000s)')
+ax.yaxis.set_major_formatter('€{x:1.1f}')
+plt.savefig('C:/Users/steven.travers/Desktop/UCD Data Course/Graph2.png')
+
+plt.show()
+
+
+
+#Calculate difference of traffic count and mean petrol price difference
+traffic_count_2018 = sum(graph_data['traffic count 2018'][0:30]) - graph_data['traffic count 2018'][8] 
+traffic_count_2022 = sum(graph_data['traffic count 2022'][0:30]) - graph_data['traffic count 2022'][8] 
+diff_traffic_count=traffic_count_2022-traffic_count_2018
+
+mean_price_2018 = graph_data['Pump price 2018'][0:30].mean() 
+mean_price_2022 = graph_data['Pump price 2022'][0:30].mean() 
+diff_mean_price=mean_price_2022-mean_price_2018
+print("The mean difference per liter of petrol (at pump) in '22 to '18 =  €",round(diff_mean_price,-1)/1000)
+print("The total difference of traffic count in '22 to '18 =  ",round(diff_traffic_count,0))
 
 
 
@@ -404,7 +416,10 @@ print("Time to Run all Code:",time.strftime("%H:%M:%S", time.gmtime(elapsed_time
 
 
 
+#Export final values as excel
+#graph_data.to_excel("C:/Users/steven.travers/Desktop/UCD Data Course/22082022/graph.xlsx")
 
-#
+
+
 
 
